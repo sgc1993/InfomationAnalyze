@@ -9,8 +9,9 @@ sep = os.path.sep
 jieba.load_userdict("..%sfile%sjiebadict.txt"%(sep,sep))
 
 
-class GetRepresentation(object):
+class Representation(object):
     __metaclass__ = ABCMeta
+
     def __init__(self):
         return
 
@@ -27,16 +28,22 @@ class GetRepresentation(object):
         pass
 
 
-class GetLdaRepresentation(GetRepresentation):
+class LdaRepresentation(Representation):
+
+    dim = 20
 
     def __init__(self):
-        GetRepresentation.__init__(self)
+        Representation.__init__(self)
         #类初始化的时候就加载模型，不然每次查询的时候都要加载一次
         if os.path.exists('..%sfile%sinstitutionNameLDA.model' % (sep, sep)):#防止第一次部署时还没训练过的情况
-            #self.lda = models.ldamodel.LdaModel.load('..%sfile%sinstitutionNameLDA.model' % (sep, sep))
-            self.lda = pkl.load('..%sfile%sinstitutionNameLDA.model' % (sep, sep))
+            try:
+                lda_file = open('..%sfile%sinstitutionNameLDA.model' % (sep, sep), 'rb')
+                self.lda = pkl.load(lda_file)
+            except EOFError:  # 捕获异常EOFError 后返回None
+                print("test")
         else:
             self.train() # 第一次的话就训练一下
+            return
         #存储着词和id的映射关系
         if os.path.exists('..%sfile%sinstitutionNameLDA.dict' % (sep, sep)):
             self.dictionary = corpora.Dictionary.load('..%sfile%sinstitutionNameLDA.dict' % (sep, sep))
@@ -52,13 +59,14 @@ class GetLdaRepresentation(GetRepresentation):
         # print(dict.token2id)字典中id和单词映射
         self.corpus = [self.dictionary.doc2bow(text) for text in train_data]
         corpora.MmCorpus.serialize('..%sfile%sinstitutionNameLDAcorpus.mm'%(sep,sep), self.corpus)  # 存入硬盘，以备后需
-        self.lda = LdaModel(corpus=self.corpus, id2word=self.dictionary, num_topics=30, minimum_probability=1e-8)
+        self.lda = LdaModel(corpus=self.corpus, id2word=self.dictionary,
+                            num_topics=LdaRepresentation.dim, minimum_probability=1e-8)
         #第三方包序列化模型
         lda_file = open('..%sfile%sinstitutionNameLDA.model' % (sep, sep), 'wb')
         pkl._dump(self.lda, lda_file)
         lda_file.close()
 
-    def get_vector(self,institution_name):
+    def get_vector(self, institution_name):
         institution_name_seg = list(jieba.cut(institution_name,cut_all=False)) # 新文档进行分词
         doc_bow = self.dictionary.doc2bow(institution_name_seg)  # 文档转换成bow
         doc_lda = self.lda[doc_bow]
@@ -76,14 +84,21 @@ class GetLdaRepresentation(GetRepresentation):
         return  train_data
 
 
-class GetLsiRepresentation(GetRepresentation):
+class LsiRepresentation(Representation):
+
+    dim = 20
 
     def __init__(self):
-        GetRepresentation.__init__(self)
+        Representation.__init__(self)
         if os.path.exists('..%sfile%sinstitutionNameLSI.model' % (sep, sep)):#防止第一次部署时还没训练过的情况
-            self.lsi = pkl.load('..%sfile%sinstitutionNameLSI.model' % (sep, sep))
+            try:
+                lsi_file = open('..%sfile%sinstitutionNameLDA.model' % (sep, sep), 'rb')
+                self.lsi = pkl.load(lsi_file)
+            except EOFError:  # 捕获异常EOFError 后返回None
+                print("test")
         else:
             self.train()
+            return
 
         if os.path.exists('..%sfile%sinstitutionNameLSI.dict' % (sep, sep)):
             self.dictionary = corpora.Dictionary.load('..%sfile%sinstitutionNameLSI.dict' % (sep, sep))
@@ -97,13 +112,13 @@ class GetLsiRepresentation(GetRepresentation):
         self.dictionary.save("..%sfile%sinstitutionNameLSI.dict" % (sep, sep))
         self.corpus = [self.dictionary.doc2bow(text) for text in train_data]
         corpora.MmCorpus.serialize('..%sfile%sinstitutionNameLSIcorpus.mm' % (sep, sep), self.corpus)
-        self.lsi = models.LsiModel(corpus=self.corpus, id2word=self.dictionary, num_topics=30)
+        self.lsi = models.LsiModel(corpus=self.corpus, id2word=self.dictionary, num_topics=LsiRepresentation.dim)
         #用第三方包序列化模型
         lsi_file = open('..%sfile%sinstitutionNameLSI.model' % (sep, sep),'wb')
         pkl._dump(self.lsi,lsi_file)
         lsi_file.close()
 
-    def get_vector(self,institution_name):
+    def get_vector(self, institution_name):
         institution_name_seg = list(jieba.cut(institution_name, cut_all=False))  # 新文档进行分词
         doc_bow = self.dictionary.doc2bow(institution_name_seg)  # 文档转换成bow
         doc_lsi = self.lsi[doc_bow]
@@ -121,17 +136,19 @@ class GetLsiRepresentation(GetRepresentation):
         return  train_data
 
 
-class GetWord2VecRepresentation(GetRepresentation):
+class Word2VecRepresentation(Representation):
+
+    dim = 200
 
     def __init__(self):
-        GetRepresentation.__init__(self)
+        Representation.__init__(self)
 
     def train(self):
         train_data = self.get_train_data()
-        model = gensim.models.Word2Vec(train_data, size=300, window=5, min_count=2)
+        model = gensim.models.Word2Vec(train_data, size=Word2VecRepresentation.dim, window=5, min_count=2)
         model.save('..%sfile%sword2vecModel'%(sep,sep))
 
-    def get_vector(self,institution_name):
+    def get_vector(self, institution_name):
         institution_name_seg = list(jieba.cut(institution_name, cut_all=False))
         model = gensim.models.Word2Vec.load('..%sfile%sword2vecModel'%(sep,sep))
         for word in institution_name_seg:
@@ -148,24 +165,37 @@ class GetWord2VecRepresentation(GetRepresentation):
         return train_data
 
 
-class GetKeywordRepresentation(GetRepresentation):
+class KeywordRepresentation(Representation):
 
-    def __init__(self):
-        GetRepresentation.__init__(self)
-        return
+    def __init__(self, dim):
+        Representation.__init__(self)
+        self.dim = dim
 
     def train(self):
         pass
 
-    def get_vector(self):
+    def get_vector(self,institution_name):
         pass
 
     def get_train_data(self):
         pass
 
 
-def get_representation(institution,algorithm,dim):
-    return
+class GetRepresentation(object):
+
+    def __init__(self, algorithm, dim):
+        representations = dict(Lda=LdaRepresentation, Lsi=LsiRepresentation,
+                               Word2Vec=Word2VecRepresentation, Keyword=KeywordRepresentation)
+        self.representation = representations[algorithm]()
+        if dim != representations[algorithm].dim:
+            representations[algorithm].dim = dim
+            self.train()
+
+    def train(self):
+        self.representation.train()
+
+    def get_vector_by_name(self, institution_name):
+        return self.representation.get_vector(institution_name)
 
 
 def test_lda():
@@ -199,8 +229,12 @@ def test_lda():
     for v in vec:
         print(v)
 
-mm = GetWord2VecRepresentation()
-mm.train()
-vec = mm.get_vector("中国电子科技集团")
-for v in vec:
-    print(v)
+
+def update_train_data():
+    pass
+
+
+a = GetRepresentation("Lsi",20)
+v = a.get_vector_by_name("杭州电子科技大学")
+for i in v:
+    print(i)
