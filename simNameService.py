@@ -1,6 +1,6 @@
 import DataBase
 import distanceTest
-from flask import Flask,request
+from flask import Flask, request
 from flask import jsonify
 import json
 import re
