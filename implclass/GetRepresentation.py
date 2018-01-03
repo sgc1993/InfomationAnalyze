@@ -1,6 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 import jieba
+import gensim
 from gensim import corpora, models,similarities
 from gensim.models import LdaModel
 import pickle as pkl
@@ -8,7 +9,7 @@ sep = os.path.sep
 jieba.load_userdict("..%sfile%sjiebadict.txt"%(sep,sep))
 
 
-class GetRepresentation():
+class GetRepresentation(object):
     __metaclass__ = ABCMeta
     def __init__(self):
         return
@@ -124,16 +125,27 @@ class GetWord2VecRepresentation(GetRepresentation):
 
     def __init__(self):
         GetRepresentation.__init__(self)
-        return
 
     def train(self):
-        pass
+        train_data = self.get_train_data()
+        model = gensim.models.Word2Vec(train_data, size=300, window=5, min_count=2)
+        model.save('..%sfile%sword2vecModel'%(sep,sep))
 
-    def get_vector(self):
-        pass
+    def get_vector(self,institution_name):
+        institution_name_seg = list(jieba.cut(institution_name, cut_all=False))
+        model = gensim.models.Word2Vec.load('..%sfile%sword2vecModel'%(sep,sep))
+        for word in institution_name_seg:
+            word_vector = list(model[word])
+        vector = list(model[institution_name_seg[0]])
+        return vector
 
     def get_train_data(self):
-        pass
+        file = open("..%sfile%sinstitutionNameSegList.dat" % (sep, sep), encoding='UTF-8')
+        train_data = []
+        lines = file.readlines()
+        for line in lines:
+            train_data.append(line.strip().split())
+        return train_data
 
 
 class GetKeywordRepresentation(GetRepresentation):
@@ -187,3 +199,8 @@ def test_lda():
     for v in vec:
         print(v)
 
+mm = GetWord2VecRepresentation()
+mm.train()
+vec = mm.get_vector("中国电子科技集团")
+for v in vec:
+    print(v)
