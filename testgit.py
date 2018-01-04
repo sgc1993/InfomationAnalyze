@@ -2,4 +2,6 @@
 import sys
 
 import xml
+
+import xml
 import xml
