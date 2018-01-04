@@ -32,7 +32,7 @@ class GetLdaRepresentation(GetRepresentation):
         # print(dict.token2id)字典中id和单词映射
         corpus = [dict.doc2bow(text) for text in trainData]
         corpora.MmCorpus.serialize('../file/institutionNameLDAcorpus.mm', corpus)  # 存入硬盘，以备后需
-        lda = LdaModel(corpus=corpus, id2word=dict, num_topics=30, per_word_topics=True)
+        lda = LdaModel(corpus=corpus, id2word=dict, num_topics=30, minimum_probability=1e-8)
         lda.save('../file/institutionNameLDA.model')
 
 
