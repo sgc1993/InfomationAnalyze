@@ -16,19 +16,11 @@ def __institution_clean__(institution, **kwargs):
 	'''
 	#If several institutions name in the same row,separator by ';' ,get the first one.(it was not supposed to appear,stupid wanFang...)
 	institution = institution.decode('utf-8').split(';')[0]
-	# print institution
-	new_name = ''
-	if_no_title_name = ''
-	flag = False
-	flag2 = False
-	index = 0
-	temp = ''
-	no_title_name_flag = False
 	#set separator
 	separatorList = kwargs.get('separator')
 	if separatorList == None:
 		# separator = '所'
-		separatorList = ["所", "学院", "系", "实验室"]
+		separatorList = ["实验室", "系", "学院", "所"]
 	ok = False
 	for separator in separatorList:
 		if ok == True:
@@ -142,8 +134,8 @@ def clean(line):
 
 #清洗文件
 def clean_file(from_file, to_file):
-	resultFile = open(from_file, 'w', encoding='UTF-8')
-	with open(to_file, encoding='UTF-8') as f:
+	resultFile = open(to_file, 'w', encoding='UTF-8')
+	with open(from_file, encoding='UTF-8') as f:
 		result = f.readlines()
 	#write file name
 	for line in result:
@@ -158,7 +150,7 @@ def clean_file(from_file, to_file):
 			print(e)
 
 
-
+clean_file("..%sfile%smongoFile%s54new.json"%(sep,sep,sep),"..%sfile%smongoFile%s54new2.json"%(sep,sep,sep))
 
 
 
