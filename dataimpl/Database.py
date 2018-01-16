@@ -59,3 +59,4 @@ if __name__ == '__main__':
     mssql = MSSQL()
     result = mssql.ExecQuery("select * from Expert")
     print(result[0])
+
