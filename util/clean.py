@@ -150,7 +150,7 @@ def clean_file(from_file, to_file):
 			print(e)
 
 
-clean_file("..%sfile%smongoFile%s54new.json"%(sep,sep,sep),"..%sfile%smongoFile%s54new2.json"%(sep,sep,sep))
+clean_file("..%sfile%smongoFile%s15new.json"%(sep,sep,sep),"..%sfile%smongoFile%s15new2.json"%(sep,sep,sep))
 
 
 

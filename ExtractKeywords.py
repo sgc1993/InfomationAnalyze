@@ -1,4 +1,7 @@
 import jieba.analyse
+import os
+
+sep = os.path.sep
 
 def loadStopWord(fileName):
     """
@@ -19,9 +22,9 @@ def init():
     :return: None
     """
     global stopwordsPath, dataPath, keywordsPath, stopwords  # 声明全局变量
-    stopwordsPath = "file\\stopwords_cn.txt"
-    dataPath = "file\\paper_clean.dat"
-    keywordsPath = "file\\paper_keywords_textrank2.dat"
+    stopwordsPath = "file%sstopwords_cn.txt"% sep
+    #dataPath = "file\\paper_clean.dat"
+    #keywordsPath = "file\\paper_keywords_textrank2.dat"
     stopwords = loadStopWord(stopwordsPath)
     print("停用词加载完成: 共%d个停用词. " % (len(stopwords)))
     print("初始化完成. ")

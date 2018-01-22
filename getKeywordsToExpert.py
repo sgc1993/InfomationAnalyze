@@ -1,6 +1,9 @@
 import DataBase
 import ExtractKeywords
 import json
+import os
+
+sep = os.path.sep
 
 #初始化配置：连接数据库，加载停用词
 def init():
@@ -37,26 +40,27 @@ def getPaperTextByPaperUid(uid):
     resultList = mssql.ExecQuery("select title_cn,abstract_text_cn from Paper WHERE UID = '%s'"%uid)
     if len(resultList) == 0:
         return ""
+    paperText = ""
     #字段为空时，查询结果为None
-    if resultList[0][0] == None:
-        resultList[0][0] = ""
-    if resultList[0][1] == None:
-        resultList[0][1] = ""
-    paperText = resultList[0][0] + '。' + resultList[0][1]
+    if resultList[0][0] != None:
+        paperText += resultList[0][0]
+    if resultList[0][1] != None:
+        paperText = paperText + '。'+ resultList[0][1]
     return paperText
 
 def getProjectTextByProjectId(id):
     resultList = mssql.ExecQuery("select main_content,abstract_str,object from Project WHERE id = '%s'" % id)
     if len(resultList) == 0:
         return ""
+    projectText = ""
     # 字段为空时，查询结果为None
-    if resultList[0][0] == None:
-        resultList[0][0] = ""
-    if resultList[0][1] == None:
-        resultList[0][1] = ""
-    if resultList[0][2] == None:
-        resultList[0][2] = ""
-    projectText = resultList[0][0] + '。' + resultList[0][1]+ '。'+resultList[0][2]
+    if resultList[0][0] != None:
+        projectText += resultList[0][0]
+    if resultList[0][1] != None:
+        projectText = projectText + '。'+ resultList[0][1]
+    if resultList[0][2] != None:
+        projectText = projectText + '。' + resultList[0][2]
+
     return projectText
 
 #在数据库Paper表中，根据UID找到对应论文的keywors字段，解析为keyword数组
@@ -117,11 +121,46 @@ def getExpertProjectKeywordListByExpertId(id):
         projectKeywordsList = unionKeywordsList(projectKeywordsList, keywordList)
     return projectKeywordsList
 
+def get_patent_id_list_by_expert_id(expert_id):
+    resultList = mssql.ExecQuery("select patentid from Patent2Expert WHERE expertid = %d" % expert_id)
+    patent_id_list = []
+    for result in resultList:
+        patent_id_list.append(result[0])
+    return patent_id_list
+
+def get_patent_text_by_patent_id(patent_id):
+    resultList = mssql.ExecQuery("select name,abstract_cn from Patent WHERE id = '%s'" % patent_id)
+    if len(resultList) == 0:
+        return ""
+    patent_text = ""
+    # 字段为空时，查询结果为None
+    if resultList[0][0] != None:
+        patent_text += resultList[0][0]
+    if resultList[0][1] != None:
+        patent_text = patent_text + '。' + resultList[0][1]
+
+    return patent_text
+
+#获得专家的专利中的关键词list
+def getExpertPatentKeywordListByExpertId(id):
+    patent_id_list = get_patent_id_list_by_expert_id(id)
+    patent_keywords_list = []
+    for patent_id in patent_id_list:
+        patent_text = get_patent_text_by_patent_id(patent_id)
+        if patent_text == "":
+            keywordList = []
+        else:
+            keywordList = extractKeywordsFromText(patent_text)
+        patent_keywords_list = unionKeywordsList(patent_keywords_list, keywordList)
+    return patent_keywords_list
+
 #根据专家id获得专家对应project和paper的keyword List
 def getExpertKeywordListByExpertId(id):
     paperKeywordList = getExpertPaperKeywordListByExpertId(id)
     projectKeywordList = getExpertProjectKeywordListByExpertId(id)
+    patentKeywordList = getExpertPatentKeywordListByExpertId(id)
     expertKeywords = unionKeywordsList(paperKeywordList,projectKeywordList)
+    expertKeywords = unionKeywordsList(expertKeywords,patentKeywordList)
     return expertKeywords
 
 #根据关键词数组统计关键词出现频率，转化为Dict
