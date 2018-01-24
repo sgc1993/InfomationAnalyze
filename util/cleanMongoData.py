@@ -45,27 +45,27 @@ def get_institution_name_set_from_file(from_path,to_path,id):
         line = line.strip()
         paper_json = json.loads(line)
         for key in paper_json["institutions"].keys():
-            # if "电" in key and "科" in key:
-            #     if str(id) in key or num_dict[id] in key:
-            #         institution_names.add(key)
-            # else:
-            #     if name_dict[id] in key:
-            #         institution_names.add(key)
-            if key == "":
-                print(line)#"institutions": {"": null, "南京电子器件研究所": "南京"}
-            institution_names.add(key)
+            if "电" in key and "科" in key:
+                if str(id) in key or num_dict[id] in key:
+                    institution_names.add(key)
+            else:
+                if name_dict[id] in key:
+                    institution_names.add(key)
+            # if key == "":
+            #     print(line)#"institutions": {"": null, "南京电子器件研究所": "南京"}
+            # institution_names.add(key)
     for name in institution_names:
         if name == "":
             print(id)
             continue
         file2.write(name+"\n")
 
-
+#get_institution_name_set_from_file("..%sfile%smongoFile%s15new2.json" % (sep, sep, sep),"..%sfile%smongoFile%s15names.json" % (sep, sep, sep),15)
 
 def get_institution_name_paper_map(id):
-    file = open("..%sfile%smongoFile%s%dnamesall.json"%(sep,sep,sep,id),encoding='utf-8')
+    file = open("..%sfile%smongoFile%s%dnames.json"%(sep,sep,sep,id),encoding='utf-8')
     file2 = open("..%sfile%smongoFile%s%dnew2.json" % (sep, sep, sep,id), encoding='utf-8')
-    file3 = open("..%sfile%smongoFile%s%dname_paper_map.json"%(sep,sep,sep,id),'w+',encoding='utf-8')
+    file3 = open("..%sfile%smongoFile%s%dclean_name_paper_map.json"%(sep,sep,sep,id),'w+',encoding='utf-8')
     papers = file2.readlines()
     names = file.readlines()
     for name in names:
@@ -82,9 +82,9 @@ def get_institution_name_paper_map(id):
 
 
 def get_dataset(id):
-    file = open("..%sfile%smongoFile%s%dname_paper_map.json"%(sep,sep,sep,id),'r',encoding='utf-8')
+    file = open("..%sfile%smongoFile%s%dclean_name_paper_map.json"%(sep,sep,sep,id),'r',encoding='utf-8')
     file2 = open("..%sfile%smongoFile%s%dnew2.json" % (sep, sep, sep,id), encoding='utf-8')
-    file3 = open("..%sfile%smongoFile%s%ddataset.json" % (sep, sep, sep,id), 'w+', encoding='utf-8')
+    file3 = open("..%sfile%smongoFile%s%dtestset.json" % (sep, sep, sep,id), 'w+', encoding='utf-8')
 
     lines = file.readlines()
     paper_lines = file2.readlines()
@@ -129,12 +129,12 @@ def get_all_name_paper_map():
     for id in files:
         get_institution_name_paper_map(id)
 
-
-
 def get_all_dataset():
     files = [10, 14, 15, 28, 29, 30, 36, 38, 54]
     for id in files:
         get_dataset(id)
+
+get_all_dataset()
 
 #去除没有classnum字段的数据
 def remove_data_without_classnum():
@@ -157,3 +157,17 @@ def append_file(file_path, append_path):
         file.write(line)
 
 #append_file("..%sfile%smongoFile%s541.json" % (sep, sep, sep),"..%sfile%smongoFile%s54re.json" % (sep, sep, sep))
+
+def clean_names(file_path,to_path):
+    file = open(file_path, 'r', encoding='utf-8')
+    lines = file.readlines()
+    file.close()
+    file = open(to_path, 'w', encoding='utf-8')
+    for line in lines:
+
+        if "三十二" in line or "三十四" in line or "三十六" in line or "三十八" in line or "三十九" in line or "三十七" in line or "三十三" in line:
+            continue
+        print(line)
+        file.write(line)
+
+#clean_names("..%sfile%smongoFile%s30names.json" % (sep, sep, sep),"..%sfile%smongoFile%s30namesclean.json" % (sep, sep, sep))

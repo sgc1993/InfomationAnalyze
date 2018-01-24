@@ -82,6 +82,11 @@ def extractKeywordsFromText(text):
 def unionKeywordsList(keywordList1,keywordList2):
     return keywordList1 + keywordList2
 
+def get_paper_keyword_list_by_paper_uid(paperUid):
+    resultList = mssql.ExecQuery("select keywords from Paper WHERE UID = '%s'" % paperUid)
+    paper_keyword_list = json.loads(resultList[0][0])
+    return paper_keyword_list
+
 #根据专家id获得专家对应所有论文的keyword,包括数据自带的keywords和论文文本抽取的keywordList
 def getExpertPaperKeywordListByExpertId(id):
     expertName = getNameByExpertId(id)
@@ -90,18 +95,17 @@ def getExpertPaperKeywordListByExpertId(id):
     paperUidList = getPaperUidListByExpertName(expertName)
     if len(paperUidList) == 0:#Author中没有对应专家，返回空数组
         return []
-    keywords = []
+    expert_keywords = []
     for paperUid in paperUidList:
-        paperText = getPaperTextByPaperUid(paperUid)
+        paper_keyword_list = get_paper_keyword_list_by_paper_uid(paperUid)
         #可能有UID不存在的情况，返回空串
-        if paperText == "":
-            keywordList1 = []
-        else:
-            keywordList1 = extractKeywordsFromText(paperText)#从paperText中抽取
-        keywordList2 =  getPaperKeywordListByPaperUid(paperUid)#paper自带的keywords
-        keywordList = unionKeywordsList(keywordList1, keywordList2)
-        keywords = unionKeywordsList(keywords, keywordList)
-    return keywords
+        expert_keywords = unionKeywordsList(expert_keywords, paper_keyword_list)
+    return expert_keywords
+
+def get_project_keyword_list_by_project_id(project_id):
+    resultList = mssql.ExecQuery("select keywords from Project WHERE id = %s" % project_id)
+    project_keyword_list = json.loads(resultList[0][0])
+    return project_keyword_list
 
 def getExpertProjectKeywordListByExpertId(id):
     expertName = getNameByExpertId(id)
@@ -112,13 +116,9 @@ def getExpertProjectKeywordListByExpertId(id):
         return []
     projectKeywordsList = []
     for projectId in projectIdList:
-        projectText = getProjectTextByProjectId(projectId)
+        project_keyword_list = get_project_keyword_list_by_project_id(projectId)
         # 可能有UID不存在的情况，返回空串
-        if projectText == "":
-            keywordList = []
-        else:
-            keywordList = extractKeywordsFromText(projectText)
-        projectKeywordsList = unionKeywordsList(projectKeywordsList, keywordList)
+        projectKeywordsList = unionKeywordsList(projectKeywordsList, project_keyword_list)
     return projectKeywordsList
 
 def get_patent_id_list_by_expert_id(expert_id):
@@ -141,17 +141,19 @@ def get_patent_text_by_patent_id(patent_id):
 
     return patent_text
 
+def get_patent_keyword_list_by_patent_id(patent_id):
+    resultList = mssql.ExecQuery("select keywords from Patent WHERE id = %s" % patent_id)
+    patent_keyword_list = json.loads(resultList[0][0])
+    return patent_keyword_list
+
 #获得专家的专利中的关键词list
 def getExpertPatentKeywordListByExpertId(id):
     patent_id_list = get_patent_id_list_by_expert_id(id)
     patent_keywords_list = []
     for patent_id in patent_id_list:
-        patent_text = get_patent_text_by_patent_id(patent_id)
-        if patent_text == "":
-            keywordList = []
-        else:
-            keywordList = extractKeywordsFromText(patent_text)
-        patent_keywords_list = unionKeywordsList(patent_keywords_list, keywordList)
+        one_patent_keyword_list = get_patent_keyword_list_by_patent_id(patent_id)
+        # 可能有UID不存在的情况，返回空串
+        patent_keywords_list = unionKeywordsList(patent_keywords_list, one_patent_keyword_list)
     return patent_keywords_list
 
 #根据专家id获得专家对应project和paper的keyword List
@@ -211,7 +213,7 @@ def getExpertIdList():
 
 #程序总入口，为每个Expert专家插入keywords字段
 def getKeywordsToExpert():
-    init()#初始化，连接数据库
+    #init()#初始化，连接数据库
     expertIdList = getExpertIdList()
     for expertId in expertIdList:
         updateExpertKeywordsByExpertId(expertId)
@@ -294,11 +296,16 @@ def update_all_project_keyword():
     project_id_list = get_project_id_list()
     for project_id in project_id_list:
         update_patent_keyword_by_patent_id(project_id)
-
+#更新三个表的关键词列
+def update_database_tables_keywords():
+    update_all_paper_keyword()
+    update_all_patent_keyword()
+    update_all_project_keyword()
 
 if __name__=='__main__':
     init()
-    update_all_patent_keyword()
+    update_database_tables_keywords()
+    getKeywordsToExpert()
 
 
 
