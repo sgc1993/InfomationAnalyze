@@ -143,6 +143,10 @@ def clean_file(from_file, to_file):
 			line = json.loads(line)
 			#line['url'] = 'http://s.wanfangdata.com.cn/Paper.aspx?q= 题名:人工智能'
 			temp = clean(line)
+			if temp == None:
+				print(from_file)
+				continue
+			#temp["classnum"] = line["classnum"]
 			temp.pop('url')#去掉url字段
 			tempstr = json.dumps(temp, ensure_ascii=False)
 			resultFile.write(tempstr+'\n')
@@ -150,8 +154,21 @@ def clean_file(from_file, to_file):
 			print(e)
 
 
-clean_file("..%sfile%smongoFile%s15new.json"%(sep,sep,sep),"..%sfile%smongoFile%s15new2.json"%(sep,sep,sep))
+#clean_file("..%sfile%smongoFile%s10new.json"%(sep,sep,sep),"..%sfile%smongoFile%s10new2.json"%(sep,sep,sep))
+
+def clean_all():
+
+	clean_file("..%sfile%smongoFile%s54new.json" % (sep, sep, sep),
+			   "..%sfile%smongoFile%s54new2.json" % (sep, sep, sep))
+
+#clean_all()
+
+def get_file_len():
+	files = [10,14,15,28,29,30,36,38,54]
+	for id in files:
+		file = open("..%sfile%smongoFile%s%ddataset.json" % (sep, sep, sep, id), encoding='utf-8')
+		lines = file.readlines()
+		print(len(lines))
 
 
-
-
+#get_file_len()
